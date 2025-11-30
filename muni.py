@@ -9,7 +9,7 @@ muniApiKey = os.getenv("MUNI_API_KEY")
 def get_muni_stop_data(stop):
     url = (
         f"https://api.511.org/transit/StopMonitoring?"
-        f"api_key={muniApiKey}&agency=SF&stopcode={stop}&format=json&MaximumStopVisits=10"
+        f"api_key={muniApiKey}&agency=SF&stopcode={stop}&format=json&MaximumStopVisits=30"
     )
     
     try:
@@ -28,7 +28,7 @@ def get_muni_stop_data(stop):
 
     return None
     
-def get_formatted_arrival_times(stops, max_visits=3):
+def get_formatted_arrival_times(stops, lineRef, max_visits=12):
     """
     Formats arrival times from Muni stop data.
     Adds 🦉 for OWL lines or LineRef '91', 🚀 for express 'R' lines (first/last only).
@@ -46,6 +46,8 @@ def get_formatted_arrival_times(stops, max_visits=3):
 
     for i, visit in enumerate(visits):
         try:
+            if visit.MonitoredVehicleJourney.LineRef.upper() != lineRef:
+                continue
             minutes = time_until_utc_min(visit.MonitoredVehicleJourney.MonitoredCall.ExpectedArrivalTime)
             line = visit.MonitoredVehicleJourney.LineRef.upper()
 

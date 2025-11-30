@@ -1,0 +1,11 @@
+[Unit]
+Description=Muni Transit Times Display
+After=multi-user.target
+
+[Service]
+ExecStart=/usr/bin/bash /home/pi/muni-display/startup.sh
+User=pi
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
