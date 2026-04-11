@@ -1,7 +1,8 @@
-import time 
+import time
+import yaml
+import base64
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from jinja2 import Environment, FileSystemLoader
 from muni import *
 from utils import *
 import platform
@@ -18,85 +19,51 @@ if on_raspberry_pi:
 
     epd = init_epd()
 
-# Example usage of the function
-# STOP_ID_L_OWL_WESTBOUND = '16616'
-# STOP_ID_L_OWL_EASTBOUND = '16617'
-# STOP_ID_28_NORTHBOUND = '13394'
-# STOP_ID_28_SOUTHBOUND = '13395'
-STOP_ID_CIVIC_CENTER_INBD = '15727'
-STOP_ID_CIVIC_CENTER_OTBD= '16997'
-STOP_ID_MARKET_8ST_INBD = '15651'
-STOP_ID_MARKET_8ST_OTBD = '15676'
-# STOP_ID_CASTRO_INDB = '15728'
-# STOP_ID_CASTRO_OTBD = '16991'
-# STOP_ID_CASTRO24_INDB = '14313'
-# STOP_ID_CASTRO24_OTBD = '14334'
+with open('config.yaml') as f:
+    config = yaml.safe_load(f)
 
 
 def main():
     global _last_transit_data, _refresh_count
-
-    # Set up Jinja environment (template folder = current directory)
-    env = Environment(loader=FileSystemLoader('.'))
-    template = env.get_template('hello.html')
 
     pacific = pytz.timezone("America/Los_Angeles")
     pacific_now = datetime.now(pacific)
 
     current_time = pacific_now.strftime("%-I:%M %p")      # e.g., "3:45 PM"
     current_date = pacific_now.strftime("%B %-d")         # e.g., "June 15"
-
-    # Example: "June 15 — 3:45 PM"
     last_updated = f"{current_time} : {current_date}"
 
-    stop_data_inbound = get_muni_stop_data(STOP_ID_CIVIC_CENTER_INBD)
-    stop_data_outbound = get_muni_stop_data(STOP_ID_CIVIC_CENTER_OTBD)
-    stop_data_f_inbound = get_muni_stop_data(STOP_ID_MARKET_8ST_INBD)
-    stop_data_f_outbound = get_muni_stop_data(STOP_ID_MARKET_8ST_OTBD)
-    # stop_data_inbound = get_muni_stop_data(STOP_ID_CASTRO_INDB)
-    # stop_data_outbound = get_muni_stop_data(STOP_ID_CASTRO_OTBD)
-    # stop_data_bus_in = get_muni_stop_data(STOP_ID_CASTRO24_INDB)
-    # stop_data_bus_out = get_muni_stop_data(STOP_ID_CASTRO24_OTBD)
-
-    # render muni stop
-    formattedTimes = {
-        # "times_L_zoo": get_formatted_arrival_times(get_muni_stop_data(STOP_ID_L_OWL_WESTBOUND)),
-        # "times_L_em": get_formatted_arrival_times(get_muni_stop_data(STOP_ID_L_OWL_EASTBOUND), "L"),
-        # "times_28_fw": get_formatted_arrival_times(get_muni_stop_data(STOP_ID_28_NORTHBOUND), "28"),
-        # "times_28_dc": get_formatted_arrival_times(get_muni_stop_data(STOP_ID_28_SOUTHBOUND)),
-        "times_F_in": get_formatted_arrival_times(stop_data_f_inbound, "F"),
-        "times_K_in": get_formatted_arrival_times(stop_data_inbound, "K"),
-        "times_L_in": get_formatted_arrival_times(stop_data_inbound, "L"),
-        "times_M_in": get_formatted_arrival_times(stop_data_inbound, "M"),
-        "times_J_in": get_formatted_arrival_times(stop_data_inbound, "J"),
-        "times_N_in": get_formatted_arrival_times(stop_data_inbound, "N"),
-        "times_K_ot": get_formatted_arrival_times(stop_data_outbound, "K"),
-        "times_F_ot": get_formatted_arrival_times(stop_data_f_outbound, "F"),
-        "times_L_ot": get_formatted_arrival_times(stop_data_outbound, "L"),
-        "times_M_ot": get_formatted_arrival_times(stop_data_outbound, "M"),
-        "times_J_ot": get_formatted_arrival_times(stop_data_outbound, "J"),
-        "times_N_ot": get_formatted_arrival_times(stop_data_outbound, "N"),
-
-        # "times_K_in": get_formatted_arrival_times(stop_data_inbound, "K"),
-        # "times_K_ot": get_formatted_arrival_times(stop_data_outbound, "K"),
-        # "times_L_in": get_formatted_arrival_times(stop_data_inbound, "L"),
-        # "times_L_ot": get_formatted_arrival_times(stop_data_outbound, "L"),
-        # "times_M_in": get_formatted_arrival_times(stop_data_inbound, "M"),
-        # "times_M_ot": get_formatted_arrival_times(stop_data_outbound, "M"),
-        # "times_24_in": get_formatted_arrival_times(stop_data_bus_in, "24"),
-        # "times_24_ot": get_formatted_arrival_times(stop_data_bus_out, "24"),
-        "current_time": last_updated
+    # Fetch each unique stop once
+    stop_data = {
+        name: get_stop_data(stop['id'], stop.get('agency', 'SF'), config['api_key'])
+        for name, stop in config['stops'].items()
     }
 
-    # formattedTimes = {
-    #     "times_28_fw": "3, 6, 9",
-    #     "times_28_dc": "2🚀, 5, 10🚀",
-    #     "times_L_em": "1🦉,7,13🦉",
-    #     "times_L_zoo": "4,8,12"
-    # }
+    # Build lines list from config
+    lines = []
+    for line in config['lines']:
+        lines.append({
+            'label': line['label'],
+            'times_in': get_formatted_arrival_times(stop_data[line['inbound_stop']], line.get('inbound_line_ref', line['label'])),
+            'times_ot': get_formatted_arrival_times(stop_data[line['outbound_stop']], line.get('outbound_line_ref', line['label'])),
+            'inbound_label': line.get('inbound_label', 'In'),
+            'outbound_label': line.get('outbound_label', 'Out'),
+        })
+
+    logo_b64 = None
+    if 'display_logo' in config:
+        with open(config['display_logo'], 'rb') as f:
+            logo_b64 = base64.b64encode(f.read()).decode('utf-8')
+
+    formattedTimes = {
+        'lines': lines,
+        'current_time': last_updated,
+        'display_name': config.get('display_name', 'Transit'),
+        'display_logo_b64': logo_b64,
+    }
 
     # Skip display update if transit data hasn't changed since last cycle
-    transit_data = {k: v for k, v in formattedTimes.items() if k != "current_time"}
+    transit_data = lines
     if transit_data == _last_transit_data:
         print("No change in transit data, skipping display update")
         return

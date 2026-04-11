@@ -1,13 +1,20 @@
-# Muni Display
+# Transit Display
 
-**Muni Display** is a Python-based application designed to fetch real-time San Francisco Muni transit data and display it on an e-ink screen. This project is ideal for Raspberry Pi setups with Waveshare displays, offering a low-power, always-on transit dashboard.
+**Transit Display** is a Python-based application designed to fetch real-time transit data and display it on an e-ink screen. It supports any agency available on the 511.org API (SF Muni, BART, and others). This project is ideal for Raspberry Pi setups with Waveshare displays, offering a low-power, always-on transit dashboard.
 
 ## Features
 
-- Real-time Muni transit data  
-- E-ink display rendering  
-- HTML-to-image support  
-- Lightweight and efficient  
+- Real-time transit data via the 511.org API (supports Muni, BART, and other Bay Area agencies)
+- Multi-agency support — mix stops from different agencies on the same display
+- E-ink display rendering (Waveshare 7.5" V2)
+- YAML-based configuration for stops, lines, agency codes, and API key
+- Configurable display name and per-line direction labels
+- Skips redundant display refreshes when transit data hasn't changed
+- Periodic full display clear every 30 refreshes to prevent ghosting
+- Nightly maintenance cycle at 3 AM to reset accumulated charge
+- Not-in-service screen during the 1 AM–5 AM window
+- Standalone maintenance script for manual ghosting remediation
+- HTML-to-image rendering via WeasyPrint and Jinja2
 
 ## Usage
 
@@ -17,80 +24,117 @@ python3 main.py
 
 Ensure your e-ink screen is connected and supported by the Waveshare driver.
 
-## Customizing Stops
+## Configuration
 
-To add or remove stops from the display, you need to update both `main.py` and `hello.html`.
+All stops, lines, and credentials are defined in a YAML config file loaded as `config.yaml`. Separate config files are provided for each agency:
 
-### ➕ Adding a Stop
+- `muni.config.yaml` — SF Muni (lines F, J, K, L, M, N at Castro/West Portal)
+- `config.yaml` — BART (Red, Yellow, Green, Blue at Civic Center/UN Plaza)
 
-#### 1. In `main.py`
+To switch agencies, copy or symlink the desired file to `config.yaml`.
 
-Use the `get_formatted_arrival_times` function to populate a new stop:
+### Config file structure
 
-```python
-STOP_ID_5_MARKET = '12345'  # Replace with the actual stop ID
+```yaml
+api_key: "your-511-api-key"
+display_name: "Muni"        # text shown in the display header
+display_logo: "muni.png"    # optional: base64-embeds an image instead of display_name text
 
-formattedTimes = {
-    "times_L_em": get_formatted_arrival_times(get_muni_stop_data(STOP_ID_L_OWL_EASTBOUND)),
-    "times_28_fw": get_formatted_arrival_times(get_muni_stop_data(STOP_ID_28_NORTHBOUND)),
-    "times_5_mkt": get_formatted_arrival_times(get_muni_stop_data(STOP_ID_5_MARKET)),
-    "current_time": current_time
-}
+stops:
+  main_inbound:
+    id: '15727'
+    agency: SF              # 511.org agency code (SF = Muni, BA = BART, etc.)
+  main_outbound:
+    id: '16997'
+    agency: SF
+
+lines:
+  - label: "N"              # text shown in the line circle
+    inbound_stop: main_inbound
+    outbound_stop: main_outbound
+    # inbound_label / outbound_label default to "In" / "Out" if omitted
+    # inbound_line_ref / outbound_line_ref default to label if omitted
 ```
 
-#### 2. In `hello.html`
+Each stop ID is fetched once regardless of how many lines reference it.
 
-Add a new `<tr>` to the table:
+### `label` vs `line_ref`
 
-```html
-<tr>
-  <td class="no-right-border">
-    <div class="cell-content">
-      <div class="circle"><span>5</span></div>
-      <div class="text-block">
-        <span class="destination">Market Street</span>
-        <span class="times">{{ times_5_mkt }}</span>
-      </div>
-    </div>
-  </td>
-</tr>
+Some agencies (e.g. BART) include a direction suffix in their `LineRef` values (`Red-S`, `Red-N`) that shouldn't appear in the display. Use `inbound_line_ref`/`outbound_line_ref` to specify the exact API lookup key separately from the display `label`:
+
+```yaml
+lines:
+  - label: "Red"            # shown on display
+    inbound_stop: civic_sb
+    outbound_stop: civic_nb
+    inbound_line_ref: "Red-S"   # matched against LineRef in the API response
+    outbound_line_ref: "Red-N"
+    inbound_label: "SB"
+    outbound_label: "NB"
 ```
 
-Make sure the `{{ times_5_mkt }}` key matches the one in `formattedTimes`.
+For Muni, `LineRef` matches the line letter exactly (`N`, `K`, etc.) so `inbound_line_ref`/`outbound_line_ref` can be omitted.
 
-### ➖ Removing a Stop
+### Adding or Removing Lines
 
-1. Delete the corresponding key from `formattedTimes` in `main.py`.
-2. Remove the associated row (`<tr>`) from `hello.html`.
+- **Add a line**: add an entry under `lines` with a `label`, `inbound_stop`, and `outbound_stop`. Add the stop under `stops` if it's new.
+- **Remove a line**: delete the entry from `lines`. Remove the stop from `stops` if nothing else references it.
+- **Change the header**: update `display_name` or set `display_logo` to an image file path.
+
+The `hello.html` template loops over `lines` automatically — no HTML changes required.
+
+### Agency Codes
+
+Common 511.org agency codes:
+
+| Agency | Code |
+|--------|------|
+| SF Muni | `SF` |
+| BART | `BA` |
+| Caltrain | `CT` |
+| AC Transit | `AC` |
+
+## Maintenance
+
+To manually clear ghosting from the e-ink display, run the maintenance script on the Pi:
+
+```bash
+python3 maintenance.py
+python3 maintenance.py --cycles 8 --delay 2.0   # more aggressive
+```
+
+This cycles the display through black/white patterns and finishes with a full clear. Nightly maintenance also runs automatically at 3 AM.
 
 ## Project Structure
 
-- `main.py` – App entry point  
-- `muni.py` – Fetches and parses transit data  
-- `einkUtils.py` – Handles e-ink display rendering  
-- `utils.py` – HTML/image utilities  
+- `main.py` – App entry point and main loop
+- `muni.py` – Fetches and parses arrival data from the 511.org API (any agency)
+- `einkUtils.py` – E-ink display control (init, display, sleep, maintenance, not-in-service screen)
+- `utils.py` – HTML/image rendering utilities
+- `hello.html` – Jinja2 template for the transit display
+- `config.yaml` – Active config (copy/symlink from an agency-specific config file)
+- `muni.config.yaml` – Muni config (F, J, K, L, M, N at Castro/West Portal)
+- `maintenance.py` – Standalone script for manual display maintenance
 
 ## Requirements
 
-```txt
-requests
-Pillow
-RPi.GPIO
-spidev
-python-periphery
+```
 html2image
 jinja2
-weasyprint
+Pillow
+requests
+WeasyPrint
 pdf2image
 pytz
-waveshare-epd
+pyyaml
+
+# Only install these on Raspberry Pi (Linux)
+spidev
+gpiozero
 ```
 
 ## License
 
 MIT License
 
-
 ---
-
-🧠 **Note**: This project was created with approximately 99% help from AI (ChatGPT). 

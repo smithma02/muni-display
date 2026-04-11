@@ -1,15 +1,12 @@
-import os
 import requests
 import json
 from types import SimpleNamespace
 from utils import *
 
-muniApiKey = os.getenv("MUNI_API_KEY")
-
-def get_muni_stop_data(stop):
+def get_stop_data(stop_id, agency, api_key):
     url = (
         f"https://api.511.org/transit/StopMonitoring?"
-        f"api_key={muniApiKey}&agency=SF&stopcode={stop}&format=json&MaximumStopVisits=30"
+        f"api_key={api_key}&agency={agency}&stopcode={stop_id}&format=json&MaximumStopVisits=30"
     )
     
     try:
@@ -20,11 +17,11 @@ def get_muni_stop_data(stop):
         return posts
 
     except requests.exceptions.RequestException as e:
-        print(f"Network error when fetching stop {stop}: {e}")
+        print(f"Network error when fetching stop {stop_id}: {e}")
     except json.JSONDecodeError as e:
-        print(f"JSON parsing error for stop {stop}: {e}")
+        print(f"JSON parsing error for stop {stop_id}: {e}")
     except Exception as e:
-        print(f"Unexpected error for stop {stop}: {e}")
+        print(f"Unexpected error for stop {stop_id}: {e}")
 
     return None
     
@@ -46,7 +43,7 @@ def get_formatted_arrival_times(stops, lineRef, max_visits=12):
 
     for i, visit in enumerate(visits):
         try:
-            if visit.MonitoredVehicleJourney.LineRef.upper() != lineRef:
+            if visit.MonitoredVehicleJourney.LineRef.upper() != lineRef.upper():
                 continue
             minutes = time_until_utc_min(visit.MonitoredVehicleJourney.MonitoredCall.ExpectedArrivalTime)
             line = visit.MonitoredVehicleJourney.LineRef.upper()

@@ -5,6 +5,7 @@ requests
 WeasyPrint
 pdf2image
 pytz
+pyyaml
 
 # Only install these on Raspberry Pi (Linux)
 spidev ; sys_platform == "linux"

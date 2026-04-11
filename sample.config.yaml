@@ -1,0 +1,37 @@
+api_key: ""
+display_name: "Muni"
+display_logo: "images/muni.png"
+
+stops:
+  main_inbound:
+    id: '15727'
+    agency: SF
+  main_outbound:
+    id: '16997'
+    agency: SF
+  f_inbound:
+    id: '15651'
+    agency: SF
+  f_outbound:
+    id: '15676'
+    agency: SF
+
+lines:
+  - label: "F"
+    inbound_stop: f_inbound
+    outbound_stop: f_outbound
+  - label: "K"
+    inbound_stop: main_inbound
+    outbound_stop: main_outbound
+  - label: "L"
+    inbound_stop: main_inbound
+    outbound_stop: main_outbound
+  - label: "M"
+    inbound_stop: main_inbound
+    outbound_stop: main_outbound
+  - label: "J"
+    inbound_stop: main_inbound
+    outbound_stop: main_outbound
+  - label: "N"
+    inbound_stop: main_inbound
+    outbound_stop: main_outbound
