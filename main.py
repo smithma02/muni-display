@@ -6,6 +6,7 @@ from zoneinfo import ZoneInfo
 from muni import *
 from utils import *
 import platform
+import server as web_server
 
 # Detect if running on a Raspberry Pi (and not macOS)
 on_raspberry_pi = platform.system() == "Linux"
@@ -14,13 +15,32 @@ print(platform.system())
 print(platform.machine())
 print(platform.uname().node.lower())
 
+epd = None
 if on_raspberry_pi:
-    from einkUtils import *
-
-    epd = init_epd()
+    try:
+        from einkUtils import *
+        import threading
+        result = [None]
+        def _init():
+            try:
+                result[0] = init_epd()
+            except Exception as e:
+                print(f"⚠️  E-ink display init error: {e}")
+        t = threading.Thread(target=_init, daemon=True)
+        t.start()
+        t.join(timeout=15)
+        if t.is_alive():
+            print("⚠️  E-ink display timed out — running in web-only mode.")
+        else:
+            epd = result[0]
+    except Exception as e:
+        print(f"⚠️  E-ink display not available: {e}")
+        print("   Running in web-only mode.")
 
 with open('config.yaml') as f:
     config = yaml.safe_load(f)
+
+web_server.start()
 
 
 def main():
@@ -62,6 +82,8 @@ def main():
         'display_logo_b64': logo_b64,
     }
 
+    web_server.update_cache(formattedTimes)
+
     # Skip display update if transit data hasn't changed since last cycle
     transit_data = lines
     if transit_data == _last_transit_data:
@@ -74,7 +96,7 @@ def main():
 
     image = render_muni_times_to_html(formattedTimes, debug=debug)
 
-    if on_raspberry_pi and image:
+    if on_raspberry_pi and epd and image:
         # Every 30 actual refreshes, run a full clear to reset accumulated ghosting
         do_clear = (_refresh_count % 30 == 0)
         display_image(epd, image, do_clear=do_clear)
@@ -103,17 +125,20 @@ if on_raspberry_pi:
             main()
         else:
             # Show the not-in-service screen once when the window opens
-            if _not_in_service_shown != today:
+            if epd and _not_in_service_shown != today:
                 print("🌙 Displaying not-in-service screen...")
                 _not_in_service_shown = today
                 display_image(epd, create_not_in_service_image())
 
             # Run one maintenance cycle at 3 AM, once per night
-            if hour == 3 and _last_maintenance_date != today:
+            if epd and hour == 3 and _last_maintenance_date != today:
                 print("🔧 Running nightly maintenance cycle...")
                 _last_maintenance_date = today
                 run_maintenance_cycles(epd)
         time.sleep(65)
 else:
     main()
-    print("Program Finished")
+    print("Web server running at http://localhost:8080 — press Ctrl+C to stop")
+    while True:
+        time.sleep(65)
+        main()

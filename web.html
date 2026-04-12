@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ display_name }} Transit</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Arial', sans-serif;
+      font-weight: bold;
+      background-color: #f5f5f5;
+      color: black;
+      min-height: 100vh;
+    }
+
+    header {
+      background-color: white;
+      border-bottom: 2px solid #ddd;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo-area img {
+      max-height: 60px;
+      max-width: 200px;
+    }
+
+    .logo-area h1 {
+      font-size: 36px;
+      font-weight: bold;
+    }
+
+    .last-updated {
+      font-size: 13px;
+      font-weight: normal;
+      color: #555;
+      text-align: right;
+    }
+
+    .last-updated span {
+      display: block;
+      font-size: 11px;
+      color: #888;
+      margin-top: 2px;
+    }
+
+    .lines {
+      max-width: 640px;
+      margin: 24px auto;
+      padding: 0 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .entry {
+      background: white;
+      border-radius: 12px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    .circle {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background-color: black;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .circle span {
+      color: white;
+      font-size: 26px;
+      font-family: 'Helvetica', Arial, sans-serif;
+      font-weight: bold;
+    }
+
+    .trip-times {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+    }
+
+    .times {
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .direction-label {
+      font-size: 13px;
+      font-weight: normal;
+      color: #555;
+      margin-right: 6px;
+    }
+
+    .refresh-indicator {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      font-size: 12px;
+      font-weight: normal;
+      padding: 6px 12px;
+      border-radius: 20px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .refresh-indicator.visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo-area">
+      {% if display_logo_b64 %}
+        <img src="data:image/png;base64,{{ display_logo_b64 }}" alt="{{ display_name }}">
+      {% else %}
+        <h1>{{ display_name }}</h1>
+      {% endif %}
+    </div>
+    <div class="last-updated">
+      <span id="data-time">{{ current_time }}</span>
+      <span id="page-updated"></span>
+    </div>
+  </header>
+
+  <div class="lines" id="lines-container">
+    {% for line in lines %}
+    <div class="entry" data-label="{{ line.label }}">
+      <div class="circle"><span>{{ line.label }}</span></div>
+      <div class="trip-times">
+        <div class="times">
+          <span class="direction-label">{{ line.inbound_label }}:</span>
+          <span class="times-in">{{ line.times_in }}</span>
+        </div>
+        <div class="times">
+          <span class="direction-label">{{ line.outbound_label }}:</span>
+          <span class="times-ot">{{ line.times_ot }}</span>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="refresh-indicator" id="refresh-indicator">Updating...</div>
+
+  <script>
+    function showIndicator(text) {
+      const el = document.getElementById('refresh-indicator');
+      el.textContent = text;
+      el.classList.add('visible');
+      setTimeout(() => el.classList.remove('visible'), 2000);
+    }
+
+    function updatePage(data) {
+      document.getElementById('data-time').textContent = data.current_time;
+      document.getElementById('page-updated').textContent =
+        'Refreshed ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+
+      data.lines.forEach(line => {
+        const entry = document.querySelector(`.entry[data-label="${line.label}"]`);
+        if (entry) {
+          entry.querySelector('.times-in').textContent = line.times_in;
+          entry.querySelector('.times-ot').textContent = line.times_ot;
+        }
+      });
+
+      showIndicator('Updated');
+    }
+
+    function fetchData() {
+      fetch('/data')
+        .then(r => r.json())
+        .then(data => {
+          if (data && data.lines) updatePage(data);
+        })
+        .catch(() => showIndicator('Update failed'));
+    }
+
+    // Set initial page-updated time
+    document.getElementById('page-updated').textContent =
+      'Loaded ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+
+    // Poll every 60 seconds
+    setInterval(fetchData, 60000);
+  </script>
+
+</body>
+</html>

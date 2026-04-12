@@ -7,3 +7,4 @@ __pycache__/
 /config.bart.yaml
 /.env
 /.vscode
+/.DS_Store

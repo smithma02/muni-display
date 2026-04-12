@@ -6,7 +6,10 @@ WeasyPrint
 pdf2image
 pytz
 pyyaml
+flask
 
 # Only install these on Raspberry Pi (Linux)
 spidev ; sys_platform == "linux"
 gpiozero ; sys_platform == "linux"
+pigpio ; sys_platform == "linux"
+lgpio ; sys_platform == "linux"
