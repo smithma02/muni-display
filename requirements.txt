@@ -12,4 +12,3 @@ flask
 spidev ; sys_platform == "linux"
 gpiozero ; sys_platform == "linux"
 pigpio ; sys_platform == "linux"
-lgpio ; sys_platform == "linux"

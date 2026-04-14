@@ -1,6 +1,6 @@
+{% set row_height = ((800 - 60 - 34 - 30) / lines | length) | int %}
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <style>
@@ -9,112 +9,186 @@
       margin: 0;
     }
 
-    body {
-      font-family: 'Arial', sans-serif;
-      font-weight: bold;
-      background-color: white;
-      color: black;
+    * {
+      box-sizing: border-box;
       margin: 0;
+      padding: 0;
     }
 
-    .last-updated {
-      font-size: 16px;
-      text-align: center;
-      margin-top: 16px;
-      margin-bottom: 20px;
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: white;
+      color: black;
+      width: 480px;
+      height: 800px;
+      overflow: hidden;
     }
 
-    h2 {
-      text-align: center;
-      font-size: 60px;
-      font-weight: bold;
-      margin: 24px 0 8px;
-    }
-
-    .table-wrapper {
-      padding: 0 24px;
-    }
-
-    .entry {
-      margin-bottom: 30px;
-      text-align: left;
-    }
-
-    .header-row {
+    .header {
+      background: white;
+      color: black;
       display: flex;
       align-items: center;
-      justify-content: flex-start; /* left-align content */
-      gap: 28px;
-      margin-bottom: 16px;
+      justify-content: space-between;
+      padding: 0 20px;
+      height: 60px;
     }
 
-    .circle {
-      width: 70px;
-      height: 70px;
-      border-radius: 50%;
-      background-color: black;
+    .agency-name {
+      font-size: 26px;
+      font-weight: bold;
+      letter-spacing: 2px;
+    }
+
+    .agency-name img {
+      max-height: 38px;
+    }
+
+    .header-time {
+      font-size: 26px;
+      font-weight: bold;
+    }
+
+    .col-headers {
+      display: grid;
+      grid-template-columns: 80px 1fr 1fr;
+      height: 34px;
+      border-bottom: 2px solid black;
+      background-color:#ccc;
+    }
+
+    .col-header {
       display: flex;
       align-items: center;
       justify-content: center;
-      flex-shrink: 0;
-      aspect-ratio: 1;
+      font-size: 22px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      color: #444;
+      border-left: 1px solid #ccc;
     }
 
-    .circle span {
+    .col-header:first-child {
+      border-left: none;
+    }
+
+    .lines {
+      display: block;
+    }
+
+    .line-row {
+      display: grid;
+      grid-template-columns: 76px 1fr 1fr;
+      border-bottom: 4px solid #666;
+    }
+
+    .line-row:last-child {
+      border-bottom: none;
+    }
+
+    .line-label {
+      background: black;
       color: white;
-      font-size: 40px;
-      font-family: 'Helvetica', Arial, sans-serif;
-      transform: translateY(0px);
-      display: inline-block;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      font-weight: bold;
+      letter-spacing: 1px;
     }
 
-    .destination {
-      font-size: 30px;
-      font-weight: normal;
-    }
-
-    .trip-times {
+    .time-cell {
       display: flex;
       flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-left: 1px solid #ccc;
+      padding: 6px 4px;
     }
 
-    .times {
-      font-size: 30px;
+    .primary-time {
+      font-size: 54px;
       font-weight: bold;
-      color: black;
+      line-height: 1;
     }
-    .muni-logo {
-      max-width: 300px;
-      max-height: 80px;
+
+    .secondary-times {
+      font-size: 26px;
+      font-weight: bold;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    .now-badge {
+      background: black;
+      color: white;
+      font-size: 36px;
+      font-weight: bold;
+      padding: 2px 14px;
+    }
+
+    .no-arrivals {
+      font-size: 14px;
+      color: #888;
+      text-align: center;
+    }
+
+    .footer {
+      height: 30px;
+      line-height: 30px;
+      text-align: center;
+      font-size: 12px;
+      color: #000;
+      border-top: 1px solid #ccc;
     }
   </style>
 </head>
 
-<body>
-  {% if display_logo_b64 %}
-  <h2><img class="muni-logo" src="data:image/png;base64,{{ display_logo_b64 }}"></h2>
+{% macro render_times(times_str) %}
+  {% set parts = times_str.split(', ') %}
+  {% if times_str == 'No arrivals' %}
+    <div class="no-arrivals">No arrivals</div>
+  {% elif parts[0] == '0' %}
+    <div class="now-badge">Now</div>
+    {% if parts | length > 1 %}
+      <div class="secondary-times">{{ parts[1:] | join(', ') }}</div>
+    {% endif %}
   {% else %}
-  <h2>{{ display_name }}</h2>
+    <div class="primary-time">{{ parts[0] }}</div>
+    {% if parts | length > 1 %}
+      <div class="secondary-times">{{ parts[1:] | join(', ') }}</div>
+    {% endif %}
   {% endif %}
+{% endmacro %}
 
-  <div class="last-updated">
-    Last Updated: {{ current_time }}
+<body>
+  <div class="header">
+    <div class="agency-name">
+      {% if display_logo_b64 %}
+        <img src="data:image/png;base64,{{ display_logo_b64 }}" alt="{{ display_name }}">
+      {% else %}
+        {{ display_name }}
+      {% endif %}
+    </div>
+    <div class="header-time">{{ current_time.split(' : ')[0] }}</div>
   </div>
 
-  <div class="table-wrapper">
+  <div class="col-headers">
+    <div class="col-header"></div>
+    <div class="col-header">{{ lines[0].inbound_label | upper }}</div>
+    <div class="col-header">{{ lines[0].outbound_label | upper }}</div>
+  </div>
+
+  <div class="lines">
     {% for line in lines %}
-    <div class="entry">
-      <div class="header-row">
-        <div class="circle"><span>{{ line.label }}</span></div>
-        <div class="trip-times">
-          <div class="times">{{ line.inbound_label }}: {{ line.times_in }}</div>
-          <div class="times">{{ line.outbound_label }}: {{ line.times_ot }}</div>
-        </div>
-      </div>
+    <div class="line-row" style="height: {{ row_height }}px;">
+      <div class="line-label">{{ line.label }}</div>
+      <div class="time-cell">{{ render_times(line.times_in) }}</div>
+      <div class="time-cell">{{ render_times(line.times_ot) }}</div>
     </div>
     {% endfor %}
-
   </div>
-</body>
 
+  <div class="footer">Last updated {{ current_time }}</div>
+</body>
 </html>

@@ -8,158 +8,247 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: 'Arial', sans-serif;
-      font-weight: bold;
-      background-color: #f5f5f5;
+      font-family: Arial, Helvetica, sans-serif;
+      background: white;
       color: black;
-      min-height: 100vh;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
 
+    /* ── Header ── */
     header {
-      background-color: white;
-      border-bottom: 2px solid #ddd;
-      padding: 16px 24px;
+      background: white;
+      color: black;
       display: flex;
       align-items: center;
       justify-content: space-between;
-    }
-
-    .logo-area img {
-      max-height: 60px;
-      max-width: 200px;
-    }
-
-    .logo-area h1 {
-      font-size: 36px;
-      font-weight: bold;
-    }
-
-    .last-updated {
-      font-size: 13px;
-      font-weight: normal;
-      color: #555;
-      text-align: right;
-    }
-
-    .last-updated span {
-      display: block;
-      font-size: 11px;
-      color: #888;
-      margin-top: 2px;
-    }
-
-    .lines {
-      max-width: 640px;
-      margin: 24px auto;
-      padding: 0 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .entry {
-      background: white;
-      border-radius: 12px;
-      padding: 16px 20px;
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-    }
-
-    .circle {
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      background-color: black;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      padding: 0 20px;
+      height: 7vh;
+      min-height: 48px;
       flex-shrink: 0;
     }
 
-    .circle span {
-      color: white;
-      font-size: 26px;
-      font-family: 'Helvetica', Arial, sans-serif;
+    .agency-name {
+      font-size: clamp(18px, 3vh, 32px);
       font-weight: bold;
+      letter-spacing: 2px;
     }
 
-    .trip-times {
+    .agency-name img {
+      max-height: clamp(28px, 4.5vh, 48px);
+    }
+
+    .header-right {
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      flex: 1;
+      align-items: flex-end;
+      gap: 2px;
     }
 
-    .times {
-      font-size: 18px;
+    .header-time {
+      font-size: clamp(18px, 3vh, 32px);
       font-weight: bold;
     }
 
-    .direction-label {
-      font-size: 13px;
+    .page-updated {
+      font-size: clamp(9px, 1.2vh, 13px);
       font-weight: normal;
-      color: #555;
-      margin-right: 6px;
+      color: #aaa;
     }
 
+    /* ── Column headers ── */
+    .col-headers {
+      display: grid;
+      grid-template-columns: 12% 1fr 1fr;
+      height: 4vh;
+      min-height: 28px;
+      flex-shrink: 0;
+      border-bottom: 2px solid black;
+      background: #ccc;
+    }
+
+    .col-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(10px, 1.5vh, 16px);
+      font-weight: bold;
+      letter-spacing: 1px;
+      color: #333;
+      border-left: 1px solid #aaa;
+    }
+
+    .col-header:first-child { border-left: none; }
+
+    /* ── Lines ── */
+    .lines {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .line-row {
+      display: grid;
+      grid-template-columns: 12% 1fr 1fr;
+      flex: 1;
+      border-bottom: 1px solid #ccc;
+      min-height: 0;
+    }
+
+    .line-row:last-child { border-bottom: none; }
+
+    .line-label {
+      background: black;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(20px, 4vh, 48px);
+      font-weight: bold;
+    }
+
+    .time-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-left: 1px solid #ccc;
+      padding: 4px;
+    }
+
+    .primary-time {
+      font-size: clamp(28px, 6vh, 64px);
+      font-weight: bold;
+      line-height: 1;
+    }
+
+    .secondary-times {
+      font-size: clamp(11px, 2vh, 20px);
+      font-weight: bold;
+      color: #666;
+      margin-top: 2px;
+    }
+
+    .now-badge {
+      background: black;
+      color: white;
+      font-size: clamp(22px, 4.5vh, 48px);
+      font-weight: bold;
+      padding: 1px 10px;
+    }
+
+    .no-arrivals {
+      font-size: clamp(10px, 1.8vh, 16px);
+      color: #888;
+      text-align: center;
+    }
+
+    /* ── Footer ── */
+    footer {
+      height: 4vh;
+      min-height: 26px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(10px, 1.4vh, 14px);
+      color: #888;
+      border-top: 1px solid #ccc;
+    }
+
+    /* ── Refresh indicator ── */
     .refresh-indicator {
       position: fixed;
-      bottom: 16px;
-      right: 16px;
-      background: rgba(0,0,0,0.6);
+      bottom: 12px;
+      right: 12px;
+      background: rgba(0,0,0,0.65);
       color: white;
       font-size: 12px;
-      font-weight: normal;
-      padding: 6px 12px;
+      padding: 5px 12px;
       border-radius: 20px;
       opacity: 0;
       transition: opacity 0.3s;
+      pointer-events: none;
     }
 
-    .refresh-indicator.visible {
-      opacity: 1;
-    }
+    .refresh-indicator.visible { opacity: 1; }
   </style>
 </head>
 <body>
 
   <header>
-    <div class="logo-area">
+    <div class="agency-name">
       {% if display_logo_b64 %}
         <img src="data:image/png;base64,{{ display_logo_b64 }}" alt="{{ display_name }}">
       {% else %}
-        <h1>{{ display_name }}</h1>
+        {{ display_name }}
       {% endif %}
     </div>
-    <div class="last-updated">
-      <span id="data-time">{{ current_time }}</span>
-      <span id="page-updated"></span>
+    <div class="header-right">
+      <span class="header-time" id="data-time">{{ current_time.split(' : ')[0] }}</span>
+      <span class="page-updated" id="page-updated"></span>
     </div>
   </header>
 
+  <div class="col-headers">
+    <div class="col-header"></div>
+    <div class="col-header">{{ lines[0].inbound_label | upper }}</div>
+    <div class="col-header">{{ lines[0].outbound_label | upper }}</div>
+  </div>
+
   <div class="lines" id="lines-container">
     {% for line in lines %}
-    <div class="entry" data-label="{{ line.label }}">
-      <div class="circle"><span>{{ line.label }}</span></div>
-      <div class="trip-times">
-        <div class="times">
-          <span class="direction-label">{{ line.inbound_label }}:</span>
-          <span class="times-in">{{ line.times_in }}</span>
-        </div>
-        <div class="times">
-          <span class="direction-label">{{ line.outbound_label }}:</span>
-          <span class="times-ot">{{ line.times_ot }}</span>
-        </div>
+    <div class="line-row" data-label="{{ line.label }}">
+      <div class="line-label">{{ line.label }}</div>
+      <div class="time-cell" id="in-{{ line.label }}">
+        {% set parts = line.times_in.split(', ') %}
+        {% if line.times_in == 'No arrivals' %}
+          <div class="no-arrivals">No arrivals</div>
+        {% elif parts[0] == '0' %}
+          <div class="now-badge">Now</div>
+          {% if parts | length > 1 %}<div class="secondary-times">{{ parts[1:] | join(', ') }}</div>{% endif %}
+        {% else %}
+          <div class="primary-time">{{ parts[0] }}</div>
+          {% if parts | length > 1 %}<div class="secondary-times">{{ parts[1:] | join(', ') }}</div>{% endif %}
+        {% endif %}
+      </div>
+      <div class="time-cell" id="ot-{{ line.label }}">
+        {% set parts = line.times_ot.split(', ') %}
+        {% if line.times_ot == 'No arrivals' %}
+          <div class="no-arrivals">No arrivals</div>
+        {% elif parts[0] == '0' %}
+          <div class="now-badge">Now</div>
+          {% if parts | length > 1 %}<div class="secondary-times">{{ parts[1:] | join(', ') }}</div>{% endif %}
+        {% else %}
+          <div class="primary-time">{{ parts[0] }}</div>
+          {% if parts | length > 1 %}<div class="secondary-times">{{ parts[1:] | join(', ') }}</div>{% endif %}
+        {% endif %}
       </div>
     </div>
     {% endfor %}
   </div>
 
+  <footer>Last updated <span id="footer-time">{{ current_time }}</span></footer>
+
   <div class="refresh-indicator" id="refresh-indicator">Updating...</div>
 
   <script>
+    function renderTimes(timesStr) {
+      const parts = timesStr.split(', ');
+      if (timesStr === 'No arrivals') {
+        return '<div class="no-arrivals">No arrivals</div>';
+      } else if (parts[0] === '0') {
+        const rest = parts.length > 1 ? `<div class="secondary-times">${parts.slice(1).join(', ')}</div>` : '';
+        return `<div class="now-badge">Now</div>${rest}`;
+      } else {
+        const rest = parts.length > 1 ? `<div class="secondary-times">${parts.slice(1).join(', ')}</div>` : '';
+        return `<div class="primary-time">${parts[0]}</div>${rest}`;
+      }
+    }
+
     function showIndicator(text) {
       const el = document.getElementById('refresh-indicator');
       el.textContent = text;
@@ -168,16 +257,17 @@
     }
 
     function updatePage(data) {
-      document.getElementById('data-time').textContent = data.current_time;
+      const timeOnly = data.current_time.split(' : ')[0];
+      document.getElementById('data-time').textContent = timeOnly;
+      document.getElementById('footer-time').textContent = data.current_time;
       document.getElementById('page-updated').textContent =
         'Refreshed ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
 
       data.lines.forEach(line => {
-        const entry = document.querySelector(`.entry[data-label="${line.label}"]`);
-        if (entry) {
-          entry.querySelector('.times-in').textContent = line.times_in;
-          entry.querySelector('.times-ot').textContent = line.times_ot;
-        }
+        const inCell = document.getElementById(`in-${line.label}`);
+        const otCell = document.getElementById(`ot-${line.label}`);
+        if (inCell) inCell.innerHTML = renderTimes(line.times_in);
+        if (otCell) otCell.innerHTML = renderTimes(line.times_ot);
       });
 
       showIndicator('Updated');
@@ -186,17 +276,13 @@
     function fetchData() {
       fetch('/data')
         .then(r => r.json())
-        .then(data => {
-          if (data && data.lines) updatePage(data);
-        })
+        .then(data => { if (data && data.lines) updatePage(data); })
         .catch(() => showIndicator('Update failed'));
     }
 
-    // Set initial page-updated time
     document.getElementById('page-updated').textContent =
       'Loaded ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
 
-    // Poll every 60 seconds
     setInterval(fetchData, 60000);
   </script>
 

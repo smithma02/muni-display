@@ -12,7 +12,8 @@ if [ ! -e /dev/spidev0.0 ]; then
 fi
 
 # Install system dependencies only if any are missing
-if ! dpkg -s python3-venv pigpio git > /dev/null 2>&1; then
+REQUIRED_PKGS="python3-venv pigpio git python3-dev libjpeg-dev zlib1g-dev libfreetype6-dev libopenjp2-7-dev libffi-dev python3-lgpio"
+if ! dpkg -s $REQUIRED_PKGS > /dev/null 2>&1; then
     echo "Installing system dependencies..."
     # Wait for any other apt process to finish before proceeding
     while flock -n /var/lib/dpkg/lock-frontend echo > /dev/null 2>&1; do
@@ -20,7 +21,8 @@ if ! dpkg -s python3-venv pigpio git > /dev/null 2>&1; then
         sleep 5
     done
     sudo apt-get update -q
-    sudo apt-get install -y -q python3-venv pigpio
+    sudo apt-get install -y -q $REQUIRED_PKGS
+    sudo apt-get clean
 fi
 
 # Clone Waveshare e-Paper library if not already present
@@ -36,15 +38,17 @@ sudo pigpiod || true
 # Create virtual environment if it doesn't exist
 if [ ! -d "venv" ]; then
     echo "Creating virtual environment..."
-    python3 -m venv venv
+    python3 -m venv --system-site-packages venv
 fi
 
-# Activate virtual environment
-source venv/bin/activate
+PIP=venv/bin/pip
+PYTHON=venv/bin/python3
 
 # Install/update Python packages
-pip install --upgrade pip -q
-pip install -r requirements.txt -q
+mkdir -p /home/pi/tmp
+$PIP install --upgrade pip -q --no-cache-dir
+TMPDIR=/home/pi/tmp $PIP install -r requirements.txt -q --no-cache-dir
+rm -rf /home/pi/tmp
 
 # Run the main script
-python3 main.py
+$PYTHON main.py
