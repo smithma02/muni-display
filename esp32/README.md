@@ -4,6 +4,8 @@ Self-contained MicroPython firmware for the **Waveshare e-Paper ESP32 Driver Boa
 
 No Raspberry Pi required.  The ESP32 fetches the 511.org API directly over WiFi, renders the transit layout natively, and uses deep sleep to minimise power consumption.
 
+![Example display output](example.png)
+
 ---
 
 ## Hardware
