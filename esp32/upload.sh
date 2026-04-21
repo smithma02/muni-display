@@ -63,6 +63,9 @@ echo "MicroPython OK: $VERSION"
 echo ""
 
 # ── Upload (single mpremote session — avoids reconnect errors) ────────────────
+# Only the files explicitly listed below are sent to the device.
+# Assets such as example.png, test_output.py, stubs/, and font_to_py.py
+# are development-only and are intentionally omitted.
 cd "$SCRIPT_DIR"
 
 echo "Uploading all files..."

@@ -170,7 +170,7 @@ Power the board via USB-C.  The board also has a JST-PH 2-pin connector for a Li
 
 ## Fonts
 
-The font `.py` files (`font_bold_36.py`, `font_bold_26.py`, `font_20.py`, `font_12.py`) are pre-generated from Helvetica and included in the repo.  To regenerate them (e.g. to change sizes or use a different font):
+The font `.py` files (`font_bold_36.py`, `font_bold_26.py`, `font_20.py`) are pre-generated from Helvetica and included in the repo.  To regenerate them (e.g. to change sizes or use a different font):
 
 ```bash
 pip install freetype-py fonttools
@@ -192,7 +192,6 @@ CHARSET="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz :,."
 python3 font_to_py.py -x -c "$CHARSET" Helvetica-Bold.ttf    36 font_bold_36.py
 python3 font_to_py.py -x -c "$CHARSET" Helvetica-Bold.ttf    26 font_bold_26.py
 python3 font_to_py.py -x -c "$CHARSET" Helvetica-Regular.ttf 20 font_20.py
-python3 font_to_py.py -x -c "$CHARSET" Helvetica-Regular.ttf 12 font_12.py
 
 # Clean up
 rm Helvetica-Bold.ttf Helvetica-Regular.ttf font_to_py.py
