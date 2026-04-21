@@ -53,11 +53,18 @@ def main():
     current_date = pacific_now.strftime("%B %-d")         # e.g., "June 15"
     last_updated = f"{current_time} : {current_date}"
 
-    # Fetch each unique stop once
-    stop_data = {
-        name: get_stop_data(stop['id'], stop.get('agency', 'SF'), config['api_key'])
-        for name, stop in config['stops'].items()
-    }
+    # Fetch each unique stop once, deduplicating by (id, agency) so that stops
+    # sharing the same physical station (e.g. BART inbound/outbound at one platform)
+    # only produce a single API request.
+    id_cache = {}
+    stop_data = {}
+    for name, stop in config['stops'].items():
+        key = (stop['id'], stop.get('agency', 'SF'))
+        if key not in id_cache:
+            if id_cache:          # small pause between sequential requests
+                time.sleep(1)
+            id_cache[key] = get_stop_data(stop['id'], stop.get('agency', 'SF'), config['api_key'])
+        stop_data[name] = id_cache[key]
 
     # Build lines list from config
     lines = []
@@ -68,7 +75,11 @@ def main():
             'times_ot': get_formatted_arrival_times(stop_data[line['outbound_stop']], line.get('outbound_line_ref', line['label'])),
             'inbound_label': line.get('inbound_label', 'In'),
             'outbound_label': line.get('outbound_label', 'Out'),
+            'web_only': line.get('web_only', False),
         })
+
+    # Lines shown on the e-ink display (excludes web_only lines)
+    display_lines = [l for l in lines if not l['web_only']]
 
     logo_b64 = None
     if 'display_logo' in config:
@@ -94,7 +105,9 @@ def main():
     # Enable debug mode if not on a Pi
     debug = not on_raspberry_pi
 
-    image = render_muni_times_to_html(formattedTimes, debug=debug)
+    # E-ink render uses only display lines (web_only lines are excluded)
+    display_formatted = {**formattedTimes, 'lines': display_lines}
+    image = render_muni_times_to_html(display_formatted, debug=debug)
 
     if on_raspberry_pi and epd and image:
         # Every 30 actual refreshes, run a full clear to reset accumulated ghosting

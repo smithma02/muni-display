@@ -35,3 +35,8 @@ lines:
   - label: "N"
     inbound_stop: main_inbound
     outbound_stop: main_outbound
+  # web_only: true — shown in the web view (which can scroll) but not on the e-ink display
+  # - label: "T"
+  #   inbound_stop: main_inbound
+  #   outbound_stop: main_outbound
+  #   web_only: true

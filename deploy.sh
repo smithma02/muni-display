@@ -56,11 +56,15 @@ FILES=(
 
 # ── Create remote directory structure ─────────────────────────────────────────
 echo "▶ Creating remote directories..."
-$SSH "$HOST" "mkdir -p ${REMOTE_DIR}/images"
+$SSH "$HOST" "mkdir -p ${REMOTE_DIR}/images ${REMOTE_DIR}/shared"
 
 # ── Copy Python files and templates ───────────────────────────────────────────
 echo "▶ Copying project files..."
 $SCP "${FILES[@]}" "${HOST}:${REMOTE_DIR}/"
+
+# ── Copy shared module ────────────────────────────────────────────────────────
+echo "▶ Copying shared module..."
+$SCP shared/*.py "${HOST}:${REMOTE_DIR}/shared/"
 
 # ── Copy images folder ────────────────────────────────────────────────────────
 echo "▶ Copying images..."

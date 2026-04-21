@@ -8,3 +8,6 @@ __pycache__/
 /.env
 /.vscode
 /.DS_Store
+/esp32/config.py
+/esp32/test_output.png
+/esp32/.rtc_memory.json

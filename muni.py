@@ -1,20 +1,21 @@
 import requests
 import json
-from types import SimpleNamespace
 from utils import *
+from shared.transit_data import extract_arrivals
+from shared.arrival_fmt import format_arrival_times
+
 
 def get_stop_data(stop_id, agency, api_key):
     url = (
         f"https://api.511.org/transit/StopMonitoring?"
         f"api_key={api_key}&agency={agency}&stopcode={stop_id}&format=json&MaximumStopVisits=30"
     )
-    
+
     try:
-        response = requests.get(url, timeout=10)  # Timeout is optional but recommended
-        response.raise_for_status()  # Raise an error for HTTP 4xx/5xx
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
         response_text = response.content.decode('utf-8-sig')
-        posts = json.loads(response_text, object_hook=lambda d: SimpleNamespace(**d))
-        return posts
+        return json.loads(response_text)
 
     except requests.exceptions.RequestException as e:
         print(f"Network error when fetching stop {stop_id}: {e}")
@@ -24,44 +25,27 @@ def get_stop_data(stop_id, agency, api_key):
         print(f"Unexpected error for stop {stop_id}: {e}")
 
     return None
-    
-def get_formatted_arrival_times(stops, lineRef, max_visits=12):
+
+
+def get_formatted_arrival_times(stop_response, lineRef, max_visits=12):
     """
-    Formats arrival times from Muni stop data.
-    Adds 🦉 for OWL lines or LineRef '91', 🚀 for express 'R' lines (first/last only).
-    No 'min' or parentheses. Comma-separated with space.
+    Returns a formatted arrival time string for a given line at a stop.
+
+    Args:
+        stop_response: dict from get_stop_data() (plain JSON, no SimpleNamespace)
+        lineRef: line reference string to filter for (e.g. "N", "Red-N")
+        max_visits: max arrivals to include in output
 
     Returns:
-        A string like "2🚀, 5, 10🦉" or "3, 6, 9"
+        A string like "2, 5, 10" or "2🚀, 5, 10🦉" or "No arrivals"
     """
-    if not stops:
+    if not stop_response:
         print("No stop data received.")
         return "No arrivals"
 
-    visits = stops.ServiceDelivery.StopMonitoringDelivery.MonitoredStopVisit[:max_visits]
-    arrival_entries = []
+    arrivals = extract_arrivals(stop_response, time_until_utc_min)
+    return format_arrival_times(arrivals, lineRef, max_display=max_visits)
 
-    for i, visit in enumerate(visits):
-        try:
-            if visit.MonitoredVehicleJourney.LineRef.upper() != lineRef.upper():
-                continue
-            minutes = time_until_utc_min(visit.MonitoredVehicleJourney.MonitoredCall.ExpectedArrivalTime)
-            line = visit.MonitoredVehicleJourney.LineRef.upper()
-
-            show_line = (line == "91" or "R" in line or "OWL" in line) and (i == 0 or i == len(visits) - 1)
-
-            if show_line:
-                if "OWL" in line or line == "91":
-                    minutes = f"{minutes}🦉"
-                elif "R" in line:
-                    minutes = f"{minutes}🚀"
-
-            arrival_entries.append(str(minutes))
-
-        except Exception as e:
-            print(f"Skipping visit due to error: {e}")
-
-    return ", ".join(arrival_entries) if arrival_entries else "No arrivals"
 
 def render_muni_times_to_html(formattedTimes, template_name='hello.html', debug=False):
     """
@@ -83,5 +67,4 @@ def render_muni_times_to_html(formattedTimes, template_name='hello.html', debug=
 
     print("🧠 Rendered HTML context:", formattedTimes)
 
-    # Convert to image in-memory
     return convert_html_to_image_weasy(html_output, debug=debug)

@@ -1,6 +1,13 @@
 # Transit Display
 
-**Transit Display** is a Python-based application designed to fetch real-time transit data and display it on an e-ink screen and a local network web page. It supports any agency available on the 511.org API (SF Muni, BART, and others). This project is ideal for Raspberry Pi setups with Waveshare displays, offering a low-power, always-on transit dashboard.
+**Transit Display** is a Python-based application designed to fetch real-time transit data and display it on an e-ink screen and a local network web page. It supports any agency available on the 511.org API (SF Muni, BART, and others).
+
+Two compute platforms are supported:
+
+| Platform | Description |
+|----------|-------------|
+| **Raspberry Pi** | Full-featured: web server, HTML rendering, easy SSH deployment. See [Pi Setup](#pi-setup) below. |
+| **ESP32** | Self-contained, no Pi needed. MicroPython firmware with WiFi + deep sleep. See [`esp32/README.md`](esp32/README.md). |
 
 ## Features
 
@@ -134,7 +141,7 @@ Common 511.org agency codes:
 
 ## Hardware
 
-### What you'll need
+### Raspberry Pi option
 
 | Component | Notes |
 |-----------|-------|
@@ -143,6 +150,15 @@ Common 511.org agency codes:
 | **MicroSD card** | 8GB or larger. Class 10 recommended. |
 | **Picture frame (5×7")** | [Amazon](https://www.amazon.com/dp/B0CMCF8QMQ) — the display fits nicely in a standard 5×7 frame |
 | **3D printed parts** | Three STL files are included — see printing notes below |
+
+### ESP32 option
+
+| Component | Notes |
+|-----------|-------|
+| **Waveshare 7.5" e-ink display (V2)** | Same display as the Pi option |
+| **Waveshare e-Paper ESP32 Driver Board** | [Waveshare](https://www.waveshare.com/e-paper-esp32-driver-board.htm) — ESP32 with built-in WiFi; no separate HAT needed |
+
+The ESP32 option is smaller and uses deep sleep for lower power draw. It does not include a web server. See [`esp32/README.md`](esp32/README.md) for full setup instructions.
 
 ### 3D Printed Parts
 
@@ -309,8 +325,13 @@ This cycles the display through black/white patterns and finishes with a full cl
 
 ## Project Structure
 
+**Shared (used by both Pi and ESP32):**
+- `shared/transit_data.py` – Parses 511.org JSON into a flat list of `{line_ref, minutes}` dicts
+- `shared/arrival_fmt.py` – Formats arrival times into display strings (e.g. `"2, 5, 10"`)
+
+**Raspberry Pi:**
 - `main.py` – App entry point and main loop
-- `muni.py` – Fetches and parses arrival data from the 511.org API (any agency)
+- `muni.py` – Fetches data from the 511.org API; delegates parsing to `shared/`
 - `server.py` – Flask web server (routes `/` and `/data`, shared transit cache)
 - `einkUtils.py` – E-ink display control (init, display, sleep, maintenance, not-in-service screen)
 - `utils.py` – HTML/image rendering utilities
@@ -324,6 +345,14 @@ This cycles the display through black/white patterns and finishes with a full cl
 - `startup.sh` – Service entrypoint (activates venv, installs deps, runs main.py)
 - `deploy.sh` – Deploy script to copy files to the Pi and install the service
 - `stl/` – 3D printable parts: display matte, 2× corner brackets, and Raspberry Pi mount
+
+**ESP32 (MicroPython, self-contained):**
+- `esp32/main.py` – Entry point; fetch → render → deep sleep loop
+- `esp32/config.py` – WiFi credentials, API key, stops, and lines (mirrors YAML structure)
+- `esp32/display_epd.py` – UC8179 SPI driver for the Waveshare 7.5" V2
+- `esp32/epd_render.py` – framebuf-based layout renderer
+- `esp32/wifi_ntp.py` – WiFi connect/disconnect, NTP sync, time helpers
+- `esp32/README.md` – Full ESP32 setup and flashing instructions
 
 ## Requirements
 

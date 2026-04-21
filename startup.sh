@@ -50,5 +50,6 @@ $PIP install --upgrade pip -q --no-cache-dir
 TMPDIR=/home/pi/tmp $PIP install -r requirements.txt -q --no-cache-dir
 rm -rf /home/pi/tmp
 
-# Run the main script
-$PYTHON main.py
+# Run the main script — exec replaces the bash process so systemd signals
+# (SIGTERM on stop/restart) reach Python directly instead of being swallowed by bash.
+exec $PYTHON main.py
